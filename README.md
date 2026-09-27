@@ -12,9 +12,13 @@ A minimal infrastructure solution to remotely wake up an Acer Nitro laptop over 
 ## 🏗️ Architectural Overview
 
 [ External Device (Phone/Laptop) ] (Via Tailscale VPN - Global Access)
+
 ▼
+
 [ Orange Pi PC (24/7) ] ➔ (Sends UDP Magic Packet over local Wi-Fi)
+
 ▼
+
 [ Acer Nitro Laptop (Wakes up instantly) ]
 
 
