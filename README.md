@@ -96,7 +96,7 @@ hosts:          files mymachines mdns4_minimal [NOTFOUND=return] dns myhostname
 
 ---
 
-## 📜 The Automation Script (`acordar_nitro.sh`)
+## 📜 The Automation Script (`wake_nitro.sh`)
 Place this script on your Orange Pi PC. It triggers the magic packet into the air, enters a loop pinging the target machine via mDNS for up to 60 seconds, and visually confirms when the machine is awake and ready for SSH or Claude CLI access.
 
 ```bash
