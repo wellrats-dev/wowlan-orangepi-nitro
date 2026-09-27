@@ -59,8 +59,8 @@ Enable and apply the service instantly:
 sudo systemctl daemon-reload && sudo systemctl enable --now persistir-wowlan.service
 ```
 
-#### B. Firewall Configuration
-Allow local mDNS requests (UDP port 5353) through the local firewall so the gateway can ping and find the laptop without knowing its dynamic IP address:
+#### B. Firewall Configuration (optional)
+If you wants llow local mDNS requests (UDP port 5353) through the local firewall so the gateway can ping and find the laptop without knowing its dynamic IP address:
 ```bash
 sudo ufw allow 5353/udp comment 'Allow Avahi mDNS'
 ```
@@ -69,7 +69,7 @@ sudo ufw allow 5353/udp comment 'Allow Avahi mDNS'
 
 ### 3. Gateway Machine: Orange Pi PC Configuration (Ubuntu Jammy)
 
-#### A. Bind Avahi Daemon to the Wireless Interface
+#### A. Bind Avahi Daemon to the Wireless Interface  (optional)
 Force the Avahi resolution service to strictly listen to your wireless interface (`wlan0`) to ensure fast local broadcast resolution:
 ```bash
 sudo nano /etc/avahi/avahi-daemon.conf
@@ -83,7 +83,7 @@ Restart the service to apply changes:
 sudo systemctl restart avahi-daemon
 ```
 
-#### B. Fix the Name Service Switch (mDNS Resolution)
+#### B. Fix the Name Service Switch (mDNS Resolution)  (optional)
 If your Orange Pi cannot resolve `.local` domains, the operating system is missing the mDNS resolution module in its local hostname lookup priorities.
 ```bash
 sudo apt update && sudo apt install -y libnss-mdns
@@ -146,9 +146,9 @@ exit 1
 ## ⚙️ How to execute
 Give execution permissions to the script on your Orange Pi:
 ```bash
-chmod +x acordar_nitro.sh
+chmod +x wake_nitro.sh
 ```
 Run it anytime from your phone (via Terminus) or another computer connected to your Tailscale network:
 ```bash
-./acordar_nitro.sh
+./wake_nitro.sh
 ```
