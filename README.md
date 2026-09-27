@@ -17,32 +17,22 @@ A minimal infrastructure solution to remotely wake up an Acer Nitro laptop over 
 ▼
 [ Acer Nitro Laptop (Wakes up instantly) ]
 
+
 ---
 
 ## 🛠️ Step-by-Step System Configuration
 
 ### 1. Target Machine: Acer Nitro Firmware (BIOS)
-By default, the Acer Nitro cuts power to network interfaces when sleeping to save battery. 
-1. Reboot your laptop and press **F2** repeatedly to enter the BIOS setup.
+By default, laptop mainboards completely cut power to wireless chips when entering sleep mode. We must explicitly force the hardware to keep the Wi-Fi card in listening mode:
+1. Reboot the laptop and press **F2** repeatedly to enter the BIOS setup.
 2. Navigate to the **Main** or **Advanced** tab using the arrow keys.
 3. Locate **Wake on LAN** and change it to `Enabled`.
-4. Disable any option related to **Power Saving LAN** or **Deep Sleep (ERP / ErP Ready)**.
-5. Press **F10** to save, select *Yes*, and hit Enter.
+4. Press **F10** to save, select *Yes*, and hit Enter.
 
 ### 2. Target Machine: OS Level (Ubuntu 24.04 LTS)
 
-#### A. The Realtek `r8169` Driver Fix
-The default Linux kernel driver (`r8169`) has a known bug with the Realtek RTL8111/8168 chip family on Ubuntu 24.04, causing interfaces to get stuck in an `unavailable` state.
-```bash
-# Install the official proprietary DKMS module
-sudo apt update && sudo apt install -y r8168-dkms
-
-# Permanently blacklist the broken default driver
-echo "blacklist r8169" | sudo tee /etc/modprobe.d/blacklist-r8169.conf
-```
-
-#### B. Persist Wireless Wake-on-LAN (WoWLAN)
-Wireless cards drop connections during sleep unless explicitly forced into listening mode. Create a systemd service to persist this setting on boot:
+#### A. Persist Wireless Wake-on-LAN (WoWLAN) Gating
+Wireless cards drop network states during sleep. We need a systemd service to inject the `magic-packet` listener capability onto the wireless card at boot time:
 ```bash
 sudo nano /etc/systemd/system/persistir-wowlan.service
 ```
@@ -60,30 +50,29 @@ RemainAfterExit=yes
 [Install]
 WantedBy=multi-user.target
 ```
-Enable and start the service:
+Enable and apply the service instantly:
 ```bash
 sudo systemctl daemon-reload && sudo systemctl enable --now persistir-wowlan.service
 ```
 
-#### C. Firewall Rule
-Allow mDNS requests (UDP port 5353) through the local firewall so the gateway can resolve the hostname:
+#### B. Firewall Configuration
+Allow local mDNS requests (UDP port 5353) through the local firewall so the gateway can ping and find the laptop without knowing its dynamic IP address:
 ```bash
 sudo ufw allow 5353/udp comment 'Allow Avahi mDNS'
 ```
 
 ---
 
-### 3. Gateway Machine: Orange Pi PC Configuration
+### 3. Gateway Machine: Orange Pi PC Configuration (Ubuntu Jammy)
 
-#### A. Lock Avahi to Wi-Fi
-To prevent the Avahi daemon from freezing when physical network cables are unplugged, force it to listen exclusively to your wireless interface (`wlan0`):
+#### A. Bind Avahi Daemon to the Wireless Interface
+Force the Avahi resolution service to strictly listen to your wireless interface (`wlan0`) to ensure fast local broadcast resolution:
 ```bash
 sudo nano /etc/avahi/avahi-daemon.conf
 ```
 Under the `[server]` section, modify or add the following lines:
 ```ini
 allow-interfaces=wlan0
-deny-interfaces=eth0
 ```
 Restart the service to apply changes: 
 ```bash
@@ -91,12 +80,12 @@ sudo systemctl restart avahi-daemon
 ```
 
 #### B. Fix the Name Service Switch (mDNS Resolution)
-If your Orange Pi cannot ping `.local` addresses, the OS is missing the mDNS resolution module in its network lookup order.
+If your Orange Pi cannot resolve `.local` domains, the operating system is missing the mDNS resolution module in its local hostname lookup priorities.
 ```bash
-sudo apt install -y libnss-mdns
+sudo apt update && sudo apt install -y libnss-mdns
 sudo nano /etc/nsswitch.conf
 ```
-Find the `hosts:` line and insert `mdns4_minimal [NOTFOUND=return]` right before `dns`:
+Find the line starting with `hosts:` and insert `mdns4_minimal [NOTFOUND=return]` right before `dns`:
 ```text
 hosts:          files mymachines mdns4_minimal [NOTFOUND=return] dns myhostname
 ```
@@ -104,7 +93,7 @@ hosts:          files mymachines mdns4_minimal [NOTFOUND=return] dns myhostname
 ---
 
 ## 📜 The Automation Script (`acordar_nitro.sh`)
-Place this script on your Orange Pi PC. It triggers the magic packet, enters a loop pinging the target via mDNS for up to 60 seconds, and confirms when the machine is ready for SSH or Claude CLI access.
+Place this script on your Orange Pi PC. It triggers the magic packet into the air, enters a loop pinging the target machine via mDNS for up to 60 seconds, and visually confirms when the machine is awake and ready for SSH or Claude CLI access.
 
 ```bash
 #!/bin/bash
@@ -150,7 +139,7 @@ echo "========================================================"
 exit 1
 ```
 
-## ⚙️ How to use
+## ⚙️ How to execute
 Give execution permissions to the script on your Orange Pi:
 ```bash
 chmod +x acordar_nitro.sh
