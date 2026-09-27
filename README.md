@@ -60,7 +60,7 @@ sudo systemctl daemon-reload && sudo systemctl enable --now persistir-wowlan.ser
 ```
 
 #### B. Firewall Configuration (optional)
-If you wants llow local mDNS requests (UDP port 5353) through the local firewall so the gateway can ping and find the laptop without knowing its dynamic IP address:
+If you want to allow local mDNS requests (UDP port 5353) through the local firewall so the gateway can ping and find the laptop without knowing its dynamic IP address:
 ```bash
 sudo ufw allow 5353/udp comment 'Allow Avahi mDNS'
 ```
